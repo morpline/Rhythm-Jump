@@ -1,0 +1,17 @@
+* {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+body, .main, #canvas{
+    width: 100vw;
+    height: 100vh;
+}
+body{
+    position: absolute;
+}
+#distance {
+    position:relative;
+    bottom: 100vh;
+}

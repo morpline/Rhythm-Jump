@@ -4,8 +4,12 @@ const feet = document.getElementById("distance");
 
 const music = document.getElementById("music");
 const land = document.getElementById("land");
-const bpm = 85;
+const fire = document.getElementById("fire");
+const hit = document.getElementById("hit");
+const bpm = 90;
 let newBpm = 0;
+let fps = 0;
+let dispfps = 0;
 
 let keys = {};
 
@@ -17,7 +21,7 @@ let game = {
     y:0,
     ym:0,
     distance:0,
-    iframes:0
+    iframes:0,
 }
 
 function updatePlayer () {
@@ -50,7 +54,7 @@ function updateBlocks () {
             if(game.iframes<0)
             {
                 game.lives--;
-                game.iframes+=8;
+                game.iframes=8;
             }
         } else if (b<50 && b>25 && game.y<25) {
             blocks.splice(i,1);
@@ -82,7 +86,8 @@ function updateClouds () {
 
 function animate () {
     // console.clear();
-    console.log(game.iframes);
+    // console.log(game.iframes);
+    fps++;
     if(game.lives<1){
         feet.innerText = "You died."
         music.pause();
@@ -98,10 +103,15 @@ function animate () {
     ctx.fillStyle = "green";
     ctx.fillRect(0, 300, 720,180);
     ctx.fillStyle = "gray";
-    if((Math.round(game.distance)/10)%(bpm/4) == 0){
+    // if((Math.round(game.distance)/10)%(bpm/4) == 0){
+    console.log((fps/dispfps)%Math.round((newBpm / (dispfps))*100));
+    if((fps/dispfps)%Math.round((newBpm / (dispfps))*100)==1){
+        //calculate how many frames until next beat
+        // newBpm / (dispfps*60) = how many second it should be to next bump
+        hit.play();
         blocks.push((bpm*10));
         if(Math.random()>0.5){
-            blocks.push((bpm*8));
+            blocks.push((bpm*12));
         }
         ctx.fillRect(30,285-game.y,25,15);
 
@@ -112,7 +122,7 @@ function animate () {
     updatePlayer();
     updateBlocks();
     updateClouds();
-    feet.innerText = `${Math.round(game.distance/10)} ft. ${game.lives} Lives ${Math.round(game.speed)} Mph`
+    feet.innerText = `${Math.round(game.distance/10)} ft. ${game.lives} Lives ${Math.round(game.speed)} Mph ${dispfps} FPS`
 }
 function start () {
     if(game.lives>0)
@@ -134,6 +144,10 @@ function start () {
         animate();
     }
 }
+setInterval(() => {
+    dispfps=fps;
+    fps=0;
+}, 1000);
 document.addEventListener("click",()=>{start()})
 document.addEventListener("keydown",(e)=>{keys[e.key]=true})
 document.addEventListener("keyup",(e)=>{keys[e.key]=false})

@@ -112,9 +112,9 @@ function animate () {
         //calculate how many frames until next beat
         // newBpm / (dispfps*60) = how many second it should be to next bump
         hit.play();
-        blocks.push((newBpm*10));
+        blocks.push((newBpm*8));
         if(Math.random()>0.5){
-            blocks.push((newBpm*12));
+            blocks.push((newBpm*10));
         }
         ctx.fillRect(30,285-game.y,25,15);
 

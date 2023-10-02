@@ -8,20 +8,21 @@ const fire = document.getElementById("fire");
 const hit = document.getElementById("hit");
 const bpm = 90;
 let newBpm = 0;
-let fps = 0;
+let fps = 30;
 let dispfps = 0;
 
 let keys = {};
 
 
 let game = {
-    lives:3,
+    lives:0,
     speed:10,
     j:0,
     y:0,
     ym:0,
     distance:0,
     iframes:0,
+    score:0,
 }
 
 function updatePlayer () {
@@ -58,12 +59,14 @@ function updateBlocks () {
             }
         } else if (b<50 && b>25 && game.y<25) {
             blocks.splice(i,1);
+            game.score+=25;
             land.currentTime = 0;
             land.play();
             game.ym=8;
         }
         if(b<-25){
             blocks.splice(i,1);
+            game.score+=10;
         }
     })
 }
@@ -89,7 +92,7 @@ function animate () {
     // console.log(game.iframes);
     fps++;
     if(game.lives<1){
-        feet.innerText = "You died."
+        feet.innerText = `You died. Score: ${game.score}`;
         music.pause();
         return;
     }
@@ -109,9 +112,9 @@ function animate () {
         //calculate how many frames until next beat
         // newBpm / (dispfps*60) = how many second it should be to next bump
         hit.play();
-        blocks.push((bpm*10));
+        blocks.push((newBpm*10));
         if(Math.random()>0.5){
-            blocks.push((bpm*12));
+            blocks.push((newBpm*12));
         }
         ctx.fillRect(30,285-game.y,25,15);
 
@@ -122,10 +125,10 @@ function animate () {
     updatePlayer();
     updateBlocks();
     updateClouds();
-    feet.innerText = `${Math.round(game.distance/10)} ft. ${game.lives} Lives ${Math.round(game.speed)} Mph ${dispfps} FPS`
+    feet.innerText = `${Math.round(game.distance/10)} ft. ${game.lives} Lives ${Math.round(game.speed)} Mph ${dispfps} FPS ${game.score} Pts.`
 }
 function start () {
-    if(game.lives>0)
+    if(game.lives==0)
     {
 
         music.currentTime = 0;
@@ -136,7 +139,9 @@ function start () {
             j:0,
             y:0,
             ym:0,
-            distance:0
+            distance:0,
+            iframes:0,
+            score:0
         }
         blocks = [
             

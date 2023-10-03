@@ -15,14 +15,20 @@ const songs = [
     {
         "name":"Factory",
         "src":"Factory.mp3",
-        "bpm":110,
+        "bpm":90,
         "credits":'Written by Ririe Nielsen'
     },
     {
         "name":" Blends",
         "src":"MusMus-BGM-082.mp3",
-        "bpm":110,
+        "bpm":85,
         "credits":"Free BGM / Music Material MusMus https://musmus.main.jp"
+    },
+    {
+        "name":" Bwop",
+        "src":"bwop.mp3",
+        "bpm":90,
+        "credits":"Test"
     },
 ];
 const music = document.getElementById("music");
@@ -60,6 +66,20 @@ let game = {
 
 
 
+function Background() {
+    ctx.fillStyle = "blue";
+    ctx.fillRect(0, 0, 720,480);
+    updateClouds();
+    ctx.fillStyle = "#383226";
+    ctx.fillRect(0, 300, 720,180);
+    ctx.fillStyle = "#a18f6b";
+    for (let index = 0; index < 720; index++) {
+        ctx.fillRect(index,300,1,Math.sin(game.distance+index/10)*5+15)
+    }
+}
+
+
+
 function updatePlayer () {
     game.y+=game.ym;
     game.ym-= actbpm*1;
@@ -71,10 +91,6 @@ function updatePlayer () {
         if(game.ym<-1){
             // land.play();
         }
-    }
-    if(keys[" "] && game.j>0){
-        game.ym=actbpm*11;
-        game.j=0;
     }
 }
 
@@ -135,6 +151,36 @@ function updateBlocks () {
 
 
 
+let robber = [
+    360
+]
+function updaterobber () {
+    ctx.fillStyle = "green"
+    robber.forEach((b,i) => {
+        ctx.fillRect(b,275,25,25);
+        robber[i]-=actbpm*15;
+        if(b<50 && b>0 && game.y<5){
+            if(game.iframes<0)
+            {
+                game.lives=0;
+                game.iframes=8;
+            }
+        } else if (b<50 && b>0 && game.y<25) {
+            robber.splice(i,1);
+            game.score+=25;
+            land.currentTime = 0;
+            land.play();
+            game.ym=9*actbpm;
+        }
+        if(b<-25){
+            robber.splice(i,1);
+            game.score+=10;
+        }
+    })
+}
+
+
+
 let clouds = [];
 for (let index = 0; index < 32; index++) {
     clouds.push(
@@ -174,6 +220,7 @@ function updateClouds () {
 
 
 let ti = 0;
+let ls = 0;
 let bitm = 0;
 let frame = 0;
 function animate () {
@@ -181,6 +228,8 @@ function animate () {
     // console.log(game.ym);
     fps++;
     ti++;
+    // ti+=music.currentTime*60-ti;
+    console.log(ti);
     if(game.lives<1){
         feet.innerText = `You died. Score: ${game.score}`;
         music.pause();
@@ -188,21 +237,20 @@ function animate () {
         return;
     }
     requestAnimationFrame(animate);
+    
+    if(music.currentTime-ls<0.03){
+        ls=music.currentTime;
+        return;
+    }
+    ls=music.currentTime;
+
     game.iframes--;
     game.speed+=0.0001;
     newBpm = bpm*game.speed/10;
     actbpm = Math.round(newBpm/bpm*10)/10;
     // console.log(actbpm);
     music.playbackRate = actbpm;
-    ctx.fillStyle = "blue";
-    ctx.fillRect(0, 0, 720,480);
-    updateClouds();
-    ctx.fillStyle = "#383226";
-    ctx.fillRect(0, 300, 720,180);
-    ctx.fillStyle = "#a18f6b";
-    for (let index = 0; index < 720; index++) {
-        ctx.fillRect(index,300,1,Math.sin(game.distance+index/10)+15)
-    }
+    Background();
     // if((Math.round(game.distance)/10)%(bpm/4) == 0){
     // console.log((fps/dispfps)%Math.round((newBpm / (dispfps))*100));
     if(Math.round((ti/60)%((60 / 4) / (actbpm*bpm))*100) < Math.round(((ti-1)/60)%((60 / 4) / (actbpm*bpm))*100)){
@@ -210,10 +258,10 @@ function animate () {
     }
     if(Math.round((ti/60)%((60) / (actbpm*bpm))*100) < Math.round(((ti-1)/60)%((60) / (actbpm*bpm))*100)){
         bitm++;
-        if(bitm===2)
+        if(bitm===3)
         {
             hit.play();
-            switch(Math.round(Math.random()*2))
+            switch(Math.round(Math.random()*3))
             {
                 case 1:
                     blocks.push((actbpm*bpm*12));
@@ -223,11 +271,33 @@ function animate () {
                 case 2:
                     coins.push((actbpm*bpm*8));
                     break;
+                case 3:
+                    robber.push((actbpm*bpm*8));
+                    break;
             }
             bitm=0;
         }
     }
+    if(Math.round((ti+5/60)%((60) / (actbpm*bpm*4))*100) < Math.round(((ti-5)/60)%((60) / (actbpm*bpm*4))*100)) {
+        if(keys[" "] && game.j>0){
+            game.ym=actbpm*11;
+            game.j=0;
+            console.warn(ti%bpm/4);
+            land.play();
+        }
+    } else {
+        if(keys[" "] && game.j>0){
+            game.ym=actbpm*4;
+            game.j=0;
+            console.log(ti%bpm/4);
+            hit.play();
+        }
+    }
+    if(game.y>0){
+        console.log(game.ym);
+    }
     updateBlocks();
+    updaterobber();
     updatePlayer();
     ctx.fillStyle = "gray";
     ctx.fillRect(30,275-game.y,25,25);
@@ -244,6 +314,7 @@ function animate () {
         <span>${dispfps} FPS</span>
         <span>${game.score} Pts.</span>
         <span>${game.coins} Coins</span>
+        <span>${Math.round((ti/60)%((60) / (actbpm*bpm*4))*100)}</span>
     `
 }
 function start (song = 0) {
@@ -251,6 +322,7 @@ function start (song = 0) {
     {
         music.src = songs[song].src;
         music.currentTime = 0;
+        ti=0;
         music.play();
         game = {
             lives:3,
@@ -262,9 +334,9 @@ function start (song = 0) {
             iframes:0,
             score:0,
             coins:0,
-        }
-        blocks = []
-        coins = []
+        };
+        blocks = [];
+        coins = [];
         animate();
         selector.style.display = "none";
     }
@@ -272,7 +344,7 @@ function start (song = 0) {
 setInterval(() => {
     dispfps=fps;
     fps=0;
-    console.log(game.distance);
+    // console.log(game.distance);
 }, 1000);
 
 songs.forEach((s,i) => {
@@ -302,12 +374,4 @@ document.addEventListener("keyup",(e)=>{keys[e.key]=false})
 
 
 //Background that displays on load
-ctx.fillStyle = "blue";
-ctx.fillRect(0, 0, 720,480);
-updateClouds();
-ctx.fillStyle = "#383226";
-ctx.fillRect(0, 300, 720,180);
-ctx.fillStyle = "#a18f6b";
-for (let index = 0; index < 720; index++) {
-    ctx.fillRect(index,300,1,Math.sin(game.distance+index/10)+15)
-}
+Background()    ;

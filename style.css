@@ -3,6 +3,9 @@
     padding: 0;
     overflow-x: hidden;
     overflow-y: hidden;
+    font-family: 'Courier New', Courier, monospace;
+    color: beige;
+    background-color: black;
 }
 body, .main, #canvas{
     width: 100vw;
@@ -11,7 +14,9 @@ body, .main, #canvas{
 body{
     position: absolute;
 }
-#distance {
+#distance, #selector {
     position:relative;
     bottom: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
 }

@@ -1,13 +1,45 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const feet = document.getElementById("distance");
+const selector = document.getElementById("selector");
 
+
+//Sounds
+const songs = [
+    {
+        "name":"Newer Wave",
+        "src":"Newer Wave.mp3",
+        "bpm":110,
+        "credits":'"Newer Wave" Kevin MacLeod (incompetech.com) <br> Licensed under Creative Commons: By Attribution 4.0 License <br> http://creativecommons.org/licenses/by/4.0/ <!-- It needs to say that when the song is set to Newer Wave -->'
+    },
+    {
+        "name":"Factory",
+        "src":"Factory.mp3",
+        "bpm":110,
+        "credits":'Written by Ririe Nielsen'
+    },
+    {
+        "name":" Blends",
+        "src":"MusMus-BGM-082.mp3",
+        "bpm":110,
+        "credits":"Free BGM / Music Material MusMus https://musmus.main.jp"
+    },
+];
 const music = document.getElementById("music");
 const land = document.getElementById("land");
 const fire = document.getElementById("fire");
 const hit = document.getElementById("hit");
-const bpm = 90;
+
+//Images
+const cloud = document.getElementById("cloud");
+const man3 = document.getElementById("man3");
+const man3hurt = document.getElementById("man3-hurt");
+const mtn = document.getElementById("mtn");
+
+
+let bpm = 85;
 let newBpm = 0;
+let actbpm = 0;
 let fps = 30;
 let dispfps = 0;
 
@@ -23,46 +55,76 @@ let game = {
     distance:0,
     iframes:0,
     score:0,
+    coins:0,
 }
+
+
 
 function updatePlayer () {
     game.y+=game.ym;
-    game.ym-= game.speed/10;
-    game.distance+=game.speed;
+    game.ym-= actbpm*1;
+    game.distance+=actbpm*1;
     if(game.y<0){
         game.y=0;
-        game.ym=-game.speed/10;
+        game.ym=-actbpm*1;
         game.j++;
         if(game.ym<-1){
             // land.play();
         }
     }
     if(keys[" "] && game.j>0){
-        game.ym=game.speed;
+        game.ym=actbpm*11;
         game.j=0;
     }
 }
+
+
+
+let coins = [
+    9999,
+]
+function updateCoins () {
+    ctx.fillStyle = "yellow"
+    coins.forEach((b,i) => {
+        ctx.fillRect(b,200,25,25);
+        coins[i]-=actbpm*10;
+        // ctx.fillStyle = "rgba(255,255,0,0.5)"
+        // ctx.fillRect(25,175,25,75);
+        if(b<50 && b>25 && game.y<125 && game.y>50){
+            coins.splice(i,1);
+            game.score+=20;
+            game.coins++;
+            fire.currentTime = 0;
+            fire.play();
+        }
+        if(b<-25){
+            coins.splice(i,1);
+        }
+    })
+}
+
+
 
 let blocks = [
     
 ]
 function updateBlocks () {
-    ctx.fillStyle = "brown"
+    ctx.fillStyle = "red"
     blocks.forEach((b,i) => {
         ctx.fillRect(b,275,25,25);
-        blocks[i]-=game.speed;
-        if(b<50 && b>25 && game.y<5){
+        blocks[i]-=actbpm*10;
+        if(b<50 && b>0 && game.y<5){
             if(game.iframes<0)
             {
                 game.lives--;
                 game.iframes=8;
             }
-        } else if (b<50 && b>25 && game.y<25) {
+        } else if (b<50 && b>0 && game.y<25) {
             blocks.splice(i,1);
             game.score+=25;
             land.currentTime = 0;
             land.play();
-            game.ym=8;
+            game.ym=9*actbpm;
         }
         if(b<-25){
             blocks.splice(i,1);
@@ -71,66 +133,123 @@ function updateBlocks () {
     })
 }
 
+
+
 let clouds = [];
-for (let index = 0; index < 16; index++) {
-    clouds.push([[Math.round(Math.random()*800),Math.random()*200, Math.random()*0.5+0.5]])
+for (let index = 0; index < 32; index++) {
+    clouds.push(
+            [
+                Math.round(Math.random()*800),
+                Math.random()*200-75, 
+                Math.random()*0.5+0.5,
+                Math.round(Math.random())
+            ]
+    );
+    clouds.sort((a,b)=>{
+        return a[2]-b[2];
+    })
 }
 function updateClouds () {
     ctx.fillStyle = "white"
     clouds.forEach((b,i) => {
-        ctx.fillRect(b[0],b[1],25*b[2],25*b[2]);
-        clouds[i][0]-=game.speed*b[2];
-        if(b[0]<-25){
-            // clouds.splice(i,1);
-            clouds[i][0]+=800;
+        // ctx.fillRect(b[0],b[1],25*b[2],25*b[2]);
+        if(b[3]){
+            ctx.drawImage(cloud, b[0],b[1],75*b[2],75*b[2]);
+            clouds[i][0]-=actbpm*b[2];
+            if(b[0]<-75){
+                // clouds.splice(i,1);
+                clouds[i][0]+=795;
+            }
+        } else {
+            ctx.drawImage(mtn, b[0],b[1]+150,450*b[2],450*b[2]);
+            clouds[i][0]-=actbpm*b[2]*0.3;
+            if(b[0]<-450){
+                // clouds.splice(i,1);
+                clouds[i][0]+=720+450;
+            }
         }
+        
     })
 }
 
+
+let ti = 0;
+let bitm = 0;
+let frame = 0;
 function animate () {
     // console.clear();
-    // console.log(game.iframes);
+    // console.log(game.ym);
     fps++;
+    ti++;
     if(game.lives<1){
         feet.innerText = `You died. Score: ${game.score}`;
         music.pause();
+        selector.style.display = "grid";
         return;
     }
     requestAnimationFrame(animate);
     game.iframes--;
-    game.speed+=0.001;
+    game.speed+=0.0001;
     newBpm = bpm*game.speed/10;
-    music.playbackRate = Math.round(newBpm/bpm);
+    actbpm = Math.round(newBpm/bpm*10)/10;
+    // console.log(actbpm);
+    music.playbackRate = actbpm;
     ctx.fillStyle = "blue";
     ctx.fillRect(0, 0, 720,480);
-    ctx.fillStyle = "green";
-    ctx.fillRect(0, 300, 720,180);
-    ctx.fillStyle = "gray";
-    // if((Math.round(game.distance)/10)%(bpm/4) == 0){
-    console.log((fps/dispfps)%Math.round((newBpm / (dispfps))*100));
-    if((fps/dispfps)%Math.round((newBpm / (dispfps))*100)==1){
-        //calculate how many frames until next beat
-        // newBpm / (dispfps*60) = how many second it should be to next bump
-        hit.play();
-        blocks.push((newBpm*8));
-        if(Math.random()>0.5){
-            blocks.push((newBpm*10));
-        }
-        ctx.fillRect(30,285-game.y,25,15);
-
-    } else {
-
-        ctx.fillRect(30,275-game.y,25,25);
-    }
-    updatePlayer();
-    updateBlocks();
     updateClouds();
-    feet.innerText = `${Math.round(game.distance/10)} ft. ${game.lives} Lives ${Math.round(game.speed)} Mph ${dispfps} FPS ${game.score} Pts.`
+    ctx.fillStyle = "#383226";
+    ctx.fillRect(0, 300, 720,180);
+    ctx.fillStyle = "#a18f6b";
+    for (let index = 0; index < 720; index++) {
+        ctx.fillRect(index,300,1,Math.sin(game.distance+index/10)+15)
+    }
+    // if((Math.round(game.distance)/10)%(bpm/4) == 0){
+    // console.log((fps/dispfps)%Math.round((newBpm / (dispfps))*100));
+    if(Math.round((ti/60)%((60 / 4) / (actbpm*bpm))*100) < Math.round(((ti-1)/60)%((60 / 4) / (actbpm*bpm))*100)){
+        frame++;
+    }
+    if(Math.round((ti/60)%((60) / (actbpm*bpm))*100) < Math.round(((ti-1)/60)%((60) / (actbpm*bpm))*100)){
+        bitm++;
+        if(bitm===2)
+        {
+            hit.play();
+            switch(Math.round(Math.random()*2))
+            {
+                case 1:
+                    blocks.push((actbpm*bpm*12));
+                case 0:
+                    blocks.push((actbpm*bpm*8));
+                    break;
+                case 2:
+                    coins.push((actbpm*bpm*8));
+                    break;
+            }
+            bitm=0;
+        }
+    }
+    updateBlocks();
+    updatePlayer();
+    ctx.fillStyle = "gray";
+    ctx.fillRect(30,275-game.y,25,25);
+    if(game.iframes>0){
+        ctx.drawImage(man3hurt,30,275-game.y,25,25);
+    } else {
+        ctx.drawImage(man3,frame%4*25,0,25,25,30,275-game.y,25,25);
+    }
+    updateCoins();
+    feet.innerHTML = `
+        <span>${Math.round(game.distance)} ft.</span>
+        <span>${game.lives} Lives</span>
+        <span>${Math.round(actbpm*60*60/2580*1000)/100} Mph</span>
+        <span>${dispfps} FPS</span>
+        <span>${game.score} Pts.</span>
+        <span>${game.coins} Coins</span>
+    `
 }
-function start () {
+function start (song = 0) {
     if(game.lives==0)
     {
-
+        music.src = songs[song].src;
         music.currentTime = 0;
         music.play();
         game = {
@@ -141,18 +260,54 @@ function start () {
             ym:0,
             distance:0,
             iframes:0,
-            score:0
+            score:0,
+            coins:0,
         }
-        blocks = [
-            
-        ]
+        blocks = []
+        coins = []
         animate();
+        selector.style.display = "none";
     }
 }
 setInterval(() => {
     dispfps=fps;
     fps=0;
+    console.log(game.distance);
 }, 1000);
-document.addEventListener("click",()=>{start()})
+
+songs.forEach((s,i) => {
+    let li = document.createElement("li");
+    let html = `
+        <p>
+            ${s.name}
+        </p>
+        <p>
+            ${s.credits}
+        </p>
+        <p>
+            ${s.bpm}
+        </p>
+    `
+    li.innerHTML = html;
+    selector.append(li);
+    li.addEventListener("click",()=>{
+        bpm = s.bpm;
+        start(i);
+    })
+});
+
+// document.addEventListener("click",()=>{start()})
 document.addEventListener("keydown",(e)=>{keys[e.key]=true})
 document.addEventListener("keyup",(e)=>{keys[e.key]=false})
+
+
+//Background that displays on load
+ctx.fillStyle = "blue";
+ctx.fillRect(0, 0, 720,480);
+updateClouds();
+ctx.fillStyle = "#383226";
+ctx.fillRect(0, 300, 720,180);
+ctx.fillStyle = "#a18f6b";
+for (let index = 0; index < 720; index++) {
+    ctx.fillRect(index,300,1,Math.sin(game.distance+index/10)+15)
+}

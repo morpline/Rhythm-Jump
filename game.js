@@ -27,7 +27,7 @@ const songs = [
     {
         "name":" Bwop",
         "src":"bwop.mp3",
-        "bpm":90,
+        "bpm":90.9,
         "credits":"Test"
     },
 ];
@@ -41,6 +41,7 @@ const cloud = document.getElementById("cloud");
 const man3 = document.getElementById("man3");
 const man3hurt = document.getElementById("man3-hurt");
 const mtn = document.getElementById("mtn");
+const coin = document.getElementById("coin");
 
 
 let bpm = 85;
@@ -100,9 +101,10 @@ let coins = [
     9999,
 ]
 function updateCoins () {
-    ctx.fillStyle = "yellow"
+    // ctx.fillStyle = "yellow"
     coins.forEach((b,i) => {
-        ctx.fillRect(b,200,25,25);
+        // ctx.fillRect(b,200,25,25);
+        ctx.drawImage(coin,frame%6*25,0,25,25,b,200,25,25)
         coins[i]-=actbpm*10;
         // ctx.fillStyle = "rgba(255,255,0,0.5)"
         // ctx.fillRect(25,175,25,75);
@@ -158,7 +160,7 @@ function updaterobber () {
     ctx.fillStyle = "green"
     robber.forEach((b,i) => {
         ctx.fillRect(b,275,25,25);
-        robber[i]-=actbpm*15;
+        robber[i]-=actbpm*20;
         if(b<50 && b>0 && game.y<5){
             if(game.iframes<0)
             {
@@ -226,10 +228,9 @@ let frame = 0;
 function animate () {
     // console.clear();
     // console.log(game.ym);
-    fps++;
     ti++;
     // ti+=music.currentTime*60-ti;
-    console.log(ti);
+    // console.log(ti);
     if(game.lives<1){
         feet.innerText = `You died. Score: ${game.score}`;
         music.pause();
@@ -237,13 +238,14 @@ function animate () {
         return;
     }
     requestAnimationFrame(animate);
-    
-    if(music.currentTime-ls<0.03){
+    // console.log(music.currentTime-ls);
+    if(music.currentTime-ls<0.01){
         ls=music.currentTime;
         return;
     }
     ls=music.currentTime;
-
+    
+    fps++;
     game.iframes--;
     game.speed+=0.0001;
     newBpm = bpm*game.speed/10;
@@ -278,33 +280,36 @@ function animate () {
             bitm=0;
         }
     }
-    if(Math.round((ti+5/60)%((60) / (actbpm*bpm*4))*100) < Math.round(((ti-5)/60)%((60) / (actbpm*bpm*4))*100)) {
+    if(Math.round((ti/60)%((60) / (actbpm*bpm*2))*100) < 5 || Math.round((ti/60)%((60) / (actbpm*bpm*2))*100) > 25) {
         if(keys[" "] && game.j>0){
             game.ym=actbpm*11;
             game.j=0;
-            console.warn(ti%bpm/4);
+            // console.warn(ti%bpm/4);'
+            console.warn("jump" + ti);
+            land.currentTime=0;
             land.play();
         }
+        console.warn("beat" + ti)
+        // game.iframes=1;
     } else {
         if(keys[" "] && game.j>0){
             game.ym=actbpm*4;
             game.j=0;
-            console.log(ti%bpm/4);
+            console.log("jump" + ti);
+            // console.log(ti%bpm/4);
             hit.play();
         }
-    }
-    if(game.y>0){
-        console.log(game.ym);
+        console.log("not beat "+ti)
     }
     updateBlocks();
     updaterobber();
     updatePlayer();
     ctx.fillStyle = "gray";
-    ctx.fillRect(30,275-game.y,25,25);
+    ctx.fillRect(25,275-game.y,25,25);
     if(game.iframes>0){
-        ctx.drawImage(man3hurt,30,275-game.y,25,25);
+        ctx.drawImage(man3hurt,25,275-game.y,25,25);
     } else {
-        ctx.drawImage(man3,frame%4*25,0,25,25,30,275-game.y,25,25);
+        ctx.drawImage(man3,frame%4*25,0,25,25,25,275-game.y,25,25);
     }
     updateCoins();
     feet.innerHTML = `
@@ -314,7 +319,7 @@ function animate () {
         <span>${dispfps} FPS</span>
         <span>${game.score} Pts.</span>
         <span>${game.coins} Coins</span>
-        <span>${Math.round((ti/60)%((60) / (actbpm*bpm*4))*100)}</span>
+        <span>${Math.round((ti+5/60)%((60) / (actbpm*bpm*2))*100)}</span>
     `
 }
 function start (song = 0) {
@@ -337,6 +342,7 @@ function start (song = 0) {
         };
         blocks = [];
         coins = [];
+        robber = [];
         animate();
         selector.style.display = "none";
     }

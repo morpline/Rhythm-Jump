@@ -54,7 +54,7 @@ let keys = {};
 
 
 let game = {
-    lives:0,
+    lives:-1,
     speed:10,
     j:0,
     y:0,
@@ -75,7 +75,7 @@ function Background() {
     ctx.fillRect(0, 300, 720,180);
     ctx.fillStyle = "#a18f6b";
     for (let index = 0; index < 720; index++) {
-        ctx.fillRect(index,300,1,Math.sin(game.distance+index/10)*5+15)
+        ctx.fillRect(index,300,1,Math.sin(ti*actbpm+index/10)*5+15)
     }
 }
 
@@ -203,7 +203,7 @@ function updateClouds () {
         // ctx.fillRect(b[0],b[1],25*b[2],25*b[2]);
         if(b[3]){
             ctx.drawImage(cloud, b[0],b[1],75*b[2],75*b[2]);
-            clouds[i][0]-=actbpm*b[2];
+            clouds[i][0]-=actbpm*b[2]+1;
             if(b[0]<-75){
                 // clouds.splice(i,1);
                 clouds[i][0]+=795;
@@ -228,18 +228,23 @@ let frame = 0;
 function animate () {
     // console.clear();
     // console.log(game.ym);
-    ti++;
     // ti+=music.currentTime*60-ti;
     // console.log(ti);
-    if(game.lives<1){
+    if(game.lives==0){
         feet.innerText = `You died. Score: ${game.score}`;
         music.pause();
         selector.style.display = "grid";
         return;
     }
     requestAnimationFrame(animate);
+    if(game.lives == -1) {
+        // ti++;
+        Background();
+        return;
+    }
+    ti++;
     // console.log(music.currentTime-ls);
-    if(music.currentTime-ls<0.01){
+    if(music.currentTime-ls<(0.008)){
         ls=music.currentTime;
         return;
     }
@@ -280,36 +285,38 @@ function animate () {
             bitm=0;
         }
     }
-    if(Math.round((ti/60)%((60) / (actbpm*bpm*2))*100) < 5 || Math.round((ti/60)%((60) / (actbpm*bpm*2))*100) > 25) {
+    let f = !(Math.round((ti/60)%((60) / (actbpm*bpm*2))*100) < 5 || Math.round((ti/60)%((60) / (actbpm*bpm*2))*100) > 25);
+    if(f) {
         if(keys[" "] && game.j>0){
             game.ym=actbpm*11;
             game.j=0;
             // console.warn(ti%bpm/4);'
-            console.warn("jump" + ti);
+            // console.warn("jump" + ti);
             land.currentTime=0;
             land.play();
         }
-        console.warn("beat" + ti)
+        // console.warn("beat" + ti)
         // game.iframes=1;
     } else {
         if(keys[" "] && game.j>0){
             game.ym=actbpm*4;
             game.j=0;
-            console.log("jump" + ti);
+            // console.log("jump" + ti);
             // console.log(ti%bpm/4);
             hit.play();
         }
-        console.log("not beat "+ti)
+        // console.log("not beat "+ti)
     }
     updateBlocks();
     updaterobber();
     updatePlayer();
     ctx.fillStyle = "gray";
     ctx.fillRect(25,275-game.y,25,25);
+    console.log(f);
     if(game.iframes>0){
         ctx.drawImage(man3hurt,25,275-game.y,25,25);
     } else {
-        ctx.drawImage(man3,frame%4*25,0,25,25,25,275-game.y,25,25);
+        ctx.drawImage(man3,(f)*25,frame%4*25,25,25,25,275-game.y,25,25);
     }
     updateCoins();
     feet.innerHTML = `
@@ -323,7 +330,7 @@ function animate () {
     `
 }
 function start (song = 0) {
-    if(game.lives==0)
+    if(game.lives<1)
     {
         music.src = songs[song].src;
         music.currentTime = 0;
@@ -343,10 +350,15 @@ function start (song = 0) {
         blocks = [];
         coins = [];
         robber = [];
-        animate();
         selector.style.display = "none";
+        if(game.lives==0)
+        {
+            animate();
+
+        }
     }
 }
+animate();
 setInterval(() => {
     dispfps=fps;
     fps=0;
@@ -370,6 +382,7 @@ songs.forEach((s,i) => {
     selector.append(li);
     li.addEventListener("click",()=>{
         bpm = s.bpm;
+        console.log("beat");
         start(i);
     })
 });
@@ -377,7 +390,3 @@ songs.forEach((s,i) => {
 // document.addEventListener("click",()=>{start()})
 document.addEventListener("keydown",(e)=>{keys[e.key]=true})
 document.addEventListener("keyup",(e)=>{keys[e.key]=false})
-
-
-//Background that displays on load
-Background()    ;

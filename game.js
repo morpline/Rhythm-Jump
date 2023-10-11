@@ -68,8 +68,12 @@ let game = {
 
 
 function Background() {
-    ctx.fillStyle = "blue";
-    ctx.fillRect(0, 0, 720,480);
+    // ctx.fillStyle = "blue";
+    for (let index = 0; index < 480; index++) {
+        ctx.fillStyle = `rgb(0,${(index/480)*255},255)`
+        ctx.fillRect(0, index, 720,1);
+    }
+    ctx.drawImage(mtn,0,0,720,480)
     updateClouds();
     ctx.fillStyle = "#383226";
     ctx.fillRect(0, 300, 720,180);
@@ -153,8 +157,90 @@ function updateBlocks () {
 
 
 
+function areBoxesColliding(box1, box2) {
+    // Calculate the sides of the boxes
+    var left1 = box1.x;
+    var right1 = box1.x + box1.width;
+    var top1 = box1.y;
+    var bottom1 = box1.y + box1.height;
+
+    var left2 = box2.x;
+    var right2 = box2.x + box2.width;
+    var top2 = box2.y;
+    var bottom2 = box2.y + box2.height;
+
+    // Check for collision
+    if (left1 < right2 && right1 > left2 && top1 < bottom2 && bottom1 > top2) {
+        return true; // Collision detected
+    }
+
+    return false; // No collision
+}
+
+// Example usage:
+
+
+
+
+//Spikes are actual rectangles w/ [x,y,w,h] syntax
+let spikes = [
+]
+function updateSpikes () {
+    ctx.fillStyle = "purple"
+    spikes.forEach((b,i) => {
+        ctx.fillRect(b[0],300-b[1],b[2],b[3]);
+        spikes[i][0]-=actbpm*10;
+        var box1 = { x: b[0], y: 300-b[1], width: b[2], height: b[3] };
+        var box2 = { x: 25, y: 275-game.y, width: 25, height: 25 };
+        // let qx = (b[0]<0 && b[0]+b[2]>50);
+        // let qy = (b[1]-b[3]<game.y+25 && b[1]>game.y);
+        // console.log("x",qx,"y",qy);
+        if(areBoxesColliding(box1,box2)){
+            console.warn("bad hit",game.y,b[0]);
+            if(game.iframes<0)
+            {
+                game.lives--;
+                game.iframes=8;
+            }
+        }
+        if(b[0]<-b[2]){
+            spikes.splice(i,1);
+            game.score+=10;
+        }
+    })
+}
+
+let jumpers = [
+    [400,26,25,26]
+]
+function updatejumpers () {
+    ctx.fillStyle = "rgb(167,180,230)"
+    jumpers.forEach((b,i) => {
+        ctx.fillRect(b[0],300-b[1],b[2],b[3]);
+        jumpers[i][0]-=actbpm*10;
+        var box1 = { x: b[0], y: 300-b[1], width: b[2], height: b[3] };
+        var box2 = { x: 25, y: 275-game.y, width: 25, height: 25 };
+        // let qx = (b[0]<0 && b[0]+b[2]>50);
+        // let qy = (b[1]-b[3]<game.y+25 && b[1]>game.y);
+        // console.log("x",qx,"y",qy);
+        if(areBoxesColliding(box1,box2)){
+            console.warn("jump hit",game.y,b[0]);
+            if(keys[" "])
+            {
+                game.ym=10*actbpm;
+            }
+        }
+        if(b[0]<-b[2]){
+            jumpers.splice(i,1);
+            game.score+=10;
+        }
+    })
+}
+
+
+
 let robber = [
-    360
+    // 360
 ]
 function updaterobber () {
     ctx.fillStyle = "green"
@@ -170,6 +256,7 @@ function updaterobber () {
         } else if (b<50 && b>0 && game.y<25) {
             robber.splice(i,1);
             game.score+=25;
+            game.coins+=5;
             land.currentTime = 0;
             land.play();
             game.ym=9*actbpm;
@@ -187,26 +274,34 @@ let clouds = [];
 for (let index = 0; index < 32; index++) {
     clouds.push(
             [
-                Math.round(Math.random()*800),
+                Math.round(Math.random()*720),
                 Math.random()*200-75, 
                 Math.random()*0.5+0.5,
-                Math.round(Math.random())
+                0
             ]
     );
-    clouds.sort((a,b)=>{
-        return a[2]-b[2];
-    })
+    clouds.push(
+        [
+            Math.round(Math.random()*720)-275,
+            Math.random()*200-75, 
+            Math.random(),
+            1
+        ]
+);
 }
+clouds.sort((a,b)=>{
+    return a[2]-b[2];
+})
 function updateClouds () {
     ctx.fillStyle = "white"
     clouds.forEach((b,i) => {
         // ctx.fillRect(b[0],b[1],25*b[2],25*b[2]);
         if(b[3]){
-            ctx.drawImage(cloud, b[0],b[1],75*b[2],75*b[2]);
-            clouds[i][0]-=actbpm*b[2]+1;
-            if(b[0]<-75){
+            ctx.drawImage(cloud, b[0],b[1],275*b[2],275*b[2]);
+            clouds[i][0]-=actbpm*b[2]+1*b[2];
+            if(b[0]<-275){
                 // clouds.splice(i,1);
-                clouds[i][0]+=795;
+                clouds[i][0]+=720+275;
             }
         } else {
             ctx.drawImage(mtn, b[0],b[1]+150,450*b[2],450*b[2]);
@@ -229,11 +324,12 @@ function animate () {
     // console.clear();
     // console.log(game.ym);
     // ti+=music.currentTime*60-ti;
-    // console.log(ti);
+    // console.log("frame!");
     if(game.lives==0){
         feet.innerText = `You died. Score: ${game.score}`;
         music.pause();
         selector.style.display = "grid";
+        console.log("Game over; Lives = 0");
         return;
     }
     requestAnimationFrame(animate);
@@ -268,7 +364,8 @@ function animate () {
         if(bitm===3)
         {
             hit.play();
-            switch(Math.round(Math.random()*3))
+            switch(Math.round(Math.random()*5))
+            // switch(5)
             {
                 case 1:
                     blocks.push((actbpm*bpm*12));
@@ -280,6 +377,13 @@ function animate () {
                     break;
                 case 3:
                     robber.push((actbpm*bpm*8));
+                    break;
+                case 4:
+                    spikes.push([actbpm*bpm*7,5,100,5])
+                    break;
+                case 5:
+                    jumpers.push([actbpm*bpm*8,50,25,25])
+                    spikes.push([actbpm*bpm*7,5,actbpm*bpm*2+25,5])
                     break;
             }
             bitm=0;
@@ -310,9 +414,11 @@ function animate () {
     updateBlocks();
     updaterobber();
     updatePlayer();
+    updateSpikes();
+    updatejumpers();
     ctx.fillStyle = "gray";
-    ctx.fillRect(25,275-game.y,25,25);
-    console.log(f);
+    // ctx.fillRect(25,275-game.y,25,25);
+    // console.log(f);
     if(game.iframes>0){
         ctx.drawImage(man3hurt,25,275-game.y,25,25);
     } else {
@@ -330,12 +436,26 @@ function animate () {
     `
 }
 function start (song = 0) {
+    
     if(game.lives<1)
     {
         music.src = songs[song].src;
         music.currentTime = 0;
         ti=0;
         music.play();
+        selector.style.display = "none";
+        updaterobber();
+        updateBlocks();
+        if(game.lives==0)
+        {
+            requestAnimationFrame(animate);
+            
+        }
+        blocks = [];
+        coins = [];
+        robber = [];
+        spikes = [];
+        jumpers = [];
         game = {
             lives:3,
             speed:10,
@@ -347,15 +467,6 @@ function start (song = 0) {
             score:0,
             coins:0,
         };
-        blocks = [];
-        coins = [];
-        robber = [];
-        selector.style.display = "none";
-        if(game.lives==0)
-        {
-            animate();
-
-        }
     }
 }
 animate();
